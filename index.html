@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sólidos e suas Planificações</title>
+<style>
+  :root{
+    --bg:#f6f3ec; --ink:#1f2a37; --muted:#5b6574; --card:#fffdf8; --line:#e3dccd;
+    --accent:#2a9d8f; --accent2:#e76f51;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;line-height:1.45}
+  header{padding:32px 20px 18px;max-width:1280px;margin:0 auto}
+  h1{margin:0 0 6px;font-size:clamp(1.6rem,3.2vw,2.4rem);letter-spacing:-.01em}
+  header p{margin:4px 0;color:var(--muted);max-width:820px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:14px;font-size:.92rem}
+  .toolbar label{display:flex;gap:6px;align-items:center;cursor:pointer}
+  .toolbar button,.card button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+  .toolbar button:hover,.card button:hover{border-color:var(--accent);color:var(--accent)}
+  nav.sec{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  nav.sec a{text-decoration:none;color:var(--ink);background:#fff;border:1px solid var(--line);padding:5px 12px;border-radius:999px;font-size:.9rem}
+  nav.sec a:hover{border-color:var(--accent)}
+  main{max-width:1280px;margin:0 auto;padding:0 20px 40px}
+  section h2{font-size:1.35rem;margin:30px 0 4px;padding-top:6px;border-top:2px solid var(--ink);display:flex;align-items:baseline;gap:10px}
+  section h2 small{font-weight:400;color:var(--muted);font-size:.9rem}
+  section > p{margin:2px 0 14px;color:var(--muted);font-size:.93rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+  .card h3{margin:0;font-size:1.02rem}
+  .card canvas{width:100%;aspect-ratio:1/1;display:block;border-radius:10px;background:radial-gradient(circle at 50% 35%,#ffffff 0%,#efe9dc 100%);cursor:grab;touch-action:pan-y}
+  .card canvas:active{cursor:grabbing}
+  .slider{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted)}
+  .slider input{flex:1;accent-color:var(--accent);height:22px}
+  .row{display:flex;gap:6px;align-items:center;justify-content:space-between}
+  .ends{display:flex;justify-content:space-between;font-size:.74rem;color:var(--muted);margin:-6px 44px 0 40px}
+  .card button{padding:4px 10px;font-size:.85rem}
+  .info{font-size:.82rem;color:var(--muted);min-height:2.4em}
+  .info b{color:var(--ink);font-weight:600}
+  .pct{font-variant-numeric:tabular-nums;width:3.2em;text-align:right;color:var(--ink);font-weight:600}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.85rem;color:var(--muted);margin-top:10px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,.25)}
+  .note{background:#fff4e6;border:1px solid #f2d3a8;border-radius:8px;padding:6px 8px;font-size:.8rem;color:#7a4b12}
+  .card h3 a{color:inherit;text-decoration:none;border-bottom:1px dashed #b9b09c;cursor:zoom-in}
+  .card h3 a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+  .card h3 a::after{content:" ⤢";font-size:.8em;color:var(--muted)}
+  #focus{position:fixed;inset:0;background:var(--bg);z-index:50;display:none;flex-direction:column;align-items:center;padding:14px 16px 18px;overflow:auto}
+  #focus.open{display:flex}
+  body.lock{overflow:hidden}
+  #fBody{width:min(100%, calc(100vh - 210px), 960px);min-width:min(100%,320px)}
+  #focus .card{border:none;background:transparent;box-shadow:none;padding:0}
+  #focus .card h3{font-size:1.5rem}
+  #focus .card h3 a{border:none;cursor:default}
+  #focus .card h3 a::after{content:""}
+  #focus .card canvas{border-radius:16px}
+  #focus .info{font-size:.95rem;text-align:center;min-height:0}
+  #focus .ends{font-size:.85rem}
+  .fbar{width:min(100%,960px);display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+  .fbar button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+  .fbar button:hover{border-color:var(--accent);color:var(--accent)}
+  .fbar .nav{display:flex;gap:6px}
+  footer{max-width:1280px;margin:0 auto;padding:10px 20px 40px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>Sólidos geométricos e suas planificações</h1>
+  <p>Arraste a barra de cada sólido para <b>abrir</b> ou <b>fechar</b> a sua planificação. Arraste a figura para girá-la; dê dois cliques para voltar à posição inicial. <b>Clique no nome</b> de um sólido para estudá-lo em tela grande.</p>
+  <div class="toolbar">
+    <label><input type="checkbox" id="autoCam" checked> Câmera sobe ao planificar (vista de cima)</label>
+    <label><input type="checkbox" id="showEdges" checked> Mostrar arestas</label>
+    <button id="openAll">Planificar todos</button>
+    <button id="closeAll">Fechar todos</button>
+  </div>
+  <div class="legend">
+    <span><i style="background:#f4a261"></i>triângulo</span>
+    <span><i style="background:#2a9d8f"></i>quadrado</span>
+    <span><i style="background:#e76f51"></i>pentágono</span>
+    <span><i style="background:#e9c46a"></i>hexágono</span>
+    <span><i style="background:#8ab17d"></i>octógono</span>
+    <span><i style="background:#9d4edd"></i>decágono</span>
+  </div>
+  <nav class="sec">
+    <a href="#plat">Sólidos de Platão (5)</a>
+    <a href="#arq">Sólidos de Arquimedes (13)</a>
+    <a href="#red">Corpos redondos</a>
+  </nav>
+</header>
+<main>
+  <section id="plat">
+    <h2>Sólidos de Platão <small>poliedros regulares convexos</small></h2>
+    <p>Todas as faces são o mesmo polígono regular e em cada vértice concorre o mesmo número de faces.</p>
+    <div class="grid" data-grupo="plat"></div>
+  </section>
+  <section id="arq">
+    <h2>Sólidos de Arquimedes <small>poliedros semirregulares</small></h2>
+    <p>As faces são polígonos regulares de dois ou mais tipos, e todos os vértices são iguais entre si.</p>
+    <div class="grid" data-grupo="arq"></div>
+  </section>
+  <section id="red">
+    <h2>Corpos redondos <small>superfícies que podem ser desenroladas</small></h2>
+    <p>Cilindro, cone e tronco de cone têm planificação exata. A esfera <b>não pode ser planificada</b> sem deformação: o que aparece é uma aproximação por fusos, como nos mapas-múndi.</p>
+    <div class="grid" data-grupo="red"></div>
+  </section>
+</main>
+<footer>
+  Página feita para uso em sala de aula. Funciona sem internet: todo o código está neste único arquivo.
+  O botão <b>PNG com abas</b> baixa a planificação numa folha A4: recorte na linha contínua, dobre na tracejada e cole cada aba sob a aresta de mesmo número.
+</footer>
+
+<div id="focus" role="dialog" aria-modal="true" aria-label="Estudo do sólido">
+  <div class="fbar">
+    <div class="nav"><button id="fPrev" title="Sólido anterior (←)">◀ anterior</button><button id="fNext" title="Próximo sólido (→)">próximo ▶</button></div>
+    <button id="fClose" title="Fechar (Esc)">✕ fechar</button>
+  </div>
+  <div id="fBody"></div>
+</div>
+
+<script>
+// ===== Geometria: sólidos, faces, árvore de planificação e animação =====
+const GEOM = (() => {
+  const PHI = (1 + Math.sqrt(5)) / 2, S2 = Math.SQRT2;
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const len = a => Math.hypot(a[0], a[1], a[2]);
+  const nrm = a => mul(a, 1 / len(a));
+
+  // ---------- geradores de coordenadas ----------
+  function signs(v) {
+    let out = [[]];
+    for (const x of v) {
+      const n = [];
+      for (const o of out) { n.push([...o, x]); if (x !== 0) n.push([...o, -x]); }
+      out = n;
+    }
+    return out;
+  }
+  const EVEN = [[0, 1, 2], [1, 2, 0], [2, 0, 1]], ODD = [[0, 2, 1], [2, 1, 0], [1, 0, 2]];
+  const ALL = EVEN.concat(ODD);
+  const permute = (v, P) => P.map(p => p.map(i => v[i]));
+  function gen(bases, P, filter) {
+    const pts = [];
+    for (const b of bases) for (const s of signs(b)) {
+      if (filter && !filter(s, b)) continue;
+      for (const p of permute(s, P)) pts.push(p);
+    }
+    return dedupe(pts);
+  }
+  function dedupe(pts) {
+    const m = new Map();
+    for (const p of pts) m.set(p.map(x => Math.round(x * 1e6)).join(','), p);
+    return [...m.values()];
+  }
+  const plusCount = s => s.filter(x => x > 0).length;
+  const minusCount = s => s.filter(x => x < 0).length;
+
+  // ---------- envoltória (faces) para poliedros uniformes ----------
+  function hullFaces(V) {
+    const n = V.length;
+    let dmin = Infinity;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) dmin = Math.min(dmin, len(sub(V[i], V[j])));
+    const nb = V.map(() => []);
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++)
+      if (len(sub(V[i], V[j])) < dmin * 1.001) { nb[i].push(j); nb[j].push(i); }
+    const faces = new Map(), eps = 1e-6 * dmin;
+    for (let j = 0; j < n; j++) for (let a = 0; a < nb[j].length; a++) for (let b = a + 1; b < nb[j].length; b++) {
+      const i = nb[j][a], k = nb[j][b];
+      let N = cross(sub(V[i], V[j]), sub(V[k], V[j]));
+      if (len(N) < 1e-9) continue;
+      N = nrm(N); if (dot(N, V[j]) < 0) N = mul(N, -1);
+      const d = dot(N, V[j]);
+      let ok = true; const on = [];
+      for (let q = 0; q < n; q++) { const e = dot(N, V[q]) - d; if (e > eps) { ok = false; break; } if (e > -eps) on.push(q); }
+      if (!ok) continue;
+      const key = on.slice().sort((x, y) => x - y).join(',');
+      if (faces.has(key)) continue;
+      const c = mul(on.reduce((s, q) => add(s, V[q]), [0, 0, 0]), 1 / on.length);
+      const e1 = nrm(sub(V[on[0]], c)), e2 = cross(N, e1);
+      on.sort((p, q) => { const u = sub(V[p], c), w = sub(V[q], c); return Math.atan2(dot(u, e2), dot(u, e1)) - Math.atan2(dot(w, e2), dot(w, e1)); });
+      faces.set(key, on);
+    }
+    // normaliza aresta = 1
+    const Vs = V.map(p => mul(p, 1 / dmin));
+    return { V: Vs, F: [...faces.values()] };
+  }
+
+  // ---------- cores ----------
+  const COR = { 3: '#f4a261', 4: '#2a9d8f', 5: '#e76f51', 6: '#e9c46a', 8: '#8ab17d', 10: '#9d4edd' };
+
+  function poly(V) {
+    const h = hullFaces(V);
+    return { V: h.V, F: h.F.map(v => ({ v, color: COR[v.length] || '#999' })), draw: null, type: 'poly' };
+  }
+
+  // ---------- definições ----------
+  const t3 = (() => { // constante tribonacci
+    return (1 + Math.cbrt(19 + 3 * Math.sqrt(33)) + Math.cbrt(19 - 3 * Math.sqrt(33))) / 3;
+  })();
+
+  function snubDodeca() {
+    // órbita de um ponto pelo grupo de rotações do icosaedro (60 rotações)
+    const rot = (u, a) => { const l = Math.hypot(...u); const [x, y, z] = u.map(v => v / l); const c = Math.cos(a), s = Math.sin(a), C = 1 - c; return [c + x * x * C, x * y * C - z * s, x * z * C + y * s, y * x * C + z * s, c + y * y * C, y * z * C - x * s, z * x * C - y * s, z * y * C + x * s, c + z * z * C]; };
+    const mm = (A, B) => { const R = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) R[3 * i + j] = A[3 * i] * B[j] + A[3 * i + 1] * B[3 + j] + A[3 * i + 2] * B[6 + j]; return R; };
+    const key = R => R.map(x => Math.round(x * 1e6)).join(',');
+    const grp = [[1, 0, 0, 0, 1, 0, 0, 0, 1]], gens = [rot([0, 1, PHI], 2 * Math.PI / 5), rot([1, 1, 1], 2 * Math.PI / 3)], seen = new Set(grp.map(key));
+    for (let i = 0; i < grp.length; i++) for (const g of gens) { const n = mm(g, grp[i]), k = key(n); if (!seen.has(k)) { seen.add(k); grp.push(n); } }
+    const p = [0.9174342129188314, -0.2982737071619696, 0.2633386803754055];
+    return grp.map(R => [R[0] * p[0] + R[1] * p[1] + R[2] * p[2], R[3] * p[0] + R[4] * p[1] + R[5] * p[2], R[6] * p[0] + R[7] * p[1] + R[8] * p[2]]);
+  }
+
+  function snubCube() {
+    const pts = [];
+    for (const s of signs([1, 1 / t3, t3])) {
+      const P = plusCount(s) % 2 === 0 ? EVEN : ODD;
+      for (const p of permute(s, P)) pts.push(p);
+    }
+    return dedupe(pts);
+  }
+
+  const SOLIDS = [
+    // ---- Platônicos ----
+    { id: 'tetraedro', grupo: 'plat', nome: 'Tetraedro', mk: () => poly([[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]]) },
+    { id: 'hexaedro', grupo: 'plat', nome: 'Hexaedro (cubo)', mk: () => poly(signs([1, 1, 1])) },
+    { id: 'octaedro', grupo: 'plat', nome: 'Octaedro', mk: () => poly(gen([[1, 0, 0]], EVEN)) },
+    { id: 'dodecaedro', grupo: 'plat', nome: 'Dodecaedro', mk: () => poly(dedupe(signs([1, 1, 1]).concat(gen([[0, 1 / PHI, PHI]], EVEN)))) },
+    { id: 'icosaedro', grupo: 'plat', nome: 'Icosaedro', mk: () => poly(gen([[0, 1, PHI]], EVEN)) },
+    // ---- Arquimedianos ----
+    { id: 'tetraedro-truncado', grupo: 'arq', nome: 'Tetraedro truncado', mk: () => poly(gen([[3, 1, 1]], ALL, s => minusCount(s) % 2 === 0)) },
+    { id: 'cuboctaedro', grupo: 'arq', nome: 'Cuboctaedro', mk: () => poly(gen([[1, 1, 0]], ALL)) },
+    { id: 'cubo-truncado', grupo: 'arq', nome: 'Cubo truncado', mk: () => poly(gen([[S2 - 1, 1, 1]], ALL)) },
+    { id: 'octaedro-truncado', grupo: 'arq', nome: 'Octaedro truncado', mk: () => poly(gen([[0, 1, 2]], ALL)) },
+    { id: 'rombicuboctaedro', grupo: 'arq', nome: 'Rombicuboctaedro', mk: () => poly(gen([[1, 1, 1 + S2]], ALL)) },
+    { id: 'cuboctaedro-truncado', grupo: 'arq', nome: 'Cuboctaedro truncado', mk: () => poly(gen([[1, 1 + S2, 1 + 2 * S2]], ALL)) },
+    { id: 'cubo-snub', grupo: 'arq', nome: 'Cubo snub (achatado)', mk: () => poly(snubCube()) },
+    { id: 'icosidodecaedro', grupo: 'arq', nome: 'Icosidodecaedro', mk: () => poly(gen([[0, 0, PHI], [0.5, PHI / 2, PHI * PHI / 2]], EVEN)) },
+    { id: 'dodecaedro-truncado', grupo: 'arq', nome: 'Dodecaedro truncado', mk: () => poly(gen([[0, 1 / PHI, 2 + PHI], [1 / PHI, PHI, 2 * PHI], [PHI, 2, PHI + 1]], EVEN)) },
+    { id: 'icosaedro-truncado', grupo: 'arq', nome: 'Icosaedro truncado (bola de futebol)', mk: () => poly(gen([[0, 1, 3 * PHI], [1, 2 + PHI, 2 * PHI], [PHI, 2, PHI ** 3]], EVEN)) },
+    { id: 'rombicosidodecaedro', grupo: 'arq', nome: 'Rombicosidodecaedro', mk: () => poly(gen([[1, 1, PHI ** 3], [PHI ** 2, PHI, 2 * PHI], [2 + PHI, 0, PHI ** 2]], EVEN)) },
+    { id: 'icosidodecaedro-truncado', grupo: 'arq', nome: 'Icosidodecaedro truncado', mk: () => poly(gen([[1 / PHI, 1 / PHI, 3 + PHI], [2 / PHI, PHI, 1 + 2 * PHI], [1 / PHI, PHI * PHI, -1 + 3 * PHI], [2 * PHI - 1, 2, 2 + PHI], [PHI, 3, 2 * PHI]], EVEN)) },
+    { id: 'dodecaedro-snub', grupo: 'arq', nome: 'Dodecaedro snub (achatado)', mk: () => poly(snubDodeca()) },
+    // ---- Corpos redondos ----
+    { id: 'cilindro', grupo: 'red', nome: 'Cilindro', mk: () => frustum(1, 1, 2.2, 48) },
+    { id: 'cone', grupo: 'red', nome: 'Cone', mk: () => cone(1, 2.2, 48) },
+    { id: 'tronco-cone', grupo: 'red', nome: 'Tronco de cone', mk: () => frustum(1.2, 0.6, 1.5, 48) },
+    { id: 'esfera', grupo: 'red', nome: 'Esfera (aproximada)', mk: () => sphere(1.2, 12, 16) },
+  ];
+
+  const ek = (a, b) => a < b ? a + '-' + b : b + '-' + a;
+  const LAT = '#4ea8de', BASE = '#f28482', BASE2 = '#f7b267';
+
+  // tronco de cone / cilindro (R base, r topo)
+  function frustum(R, r, h, N) {
+    const V = [], F = [], draw = new Set(), parent = [];
+    for (let i = 0; i < N; i++) { const a = 2 * Math.PI * i / N; V.push([R * Math.cos(a), 0, R * Math.sin(a)]); }
+    for (let i = 0; i < N; i++) { const a = 2 * Math.PI * i / N; V.push([r * Math.cos(a), h, r * Math.sin(a)]); }
+    const b = i => i % N, t = i => N + (i % N);
+    F.push({ v: [...Array(N).keys()].map(b), color: BASE }); parent.push(-1); // 0: base inferior (raiz)
+    const h0 = N / 2;
+    const strip = i => 1 + i;
+    for (let i = 0; i < N; i++) {
+      F.push({ v: [b(i), b(i + 1), t(i + 1), t(i)], color: LAT });
+      parent.push(i === h0 ? 0 : i < h0 ? strip(i + 1) : strip(i - 1));
+      draw.add(ek(b(i), b(i + 1))); draw.add(ek(t(i), t(i + 1)));
+    }
+    draw.add(ek(b(0), t(0)));
+    F.push({ v: [...Array(N).keys()].map(t), color: BASE2 }); parent.push(strip(h0));
+    return { V, F, draw, parent, type: 'red', centered: true };
+  }
+
+  function cone(R, h, N) {
+    const V = [], F = [], draw = new Set(), parent = [];
+    for (let i = 0; i < N; i++) { const a = 2 * Math.PI * i / N; V.push([R * Math.cos(a), 0, R * Math.sin(a)]); }
+    const A = N; V.push([0, h, 0]);
+    F.push({ v: [...Array(N).keys()], color: BASE }); parent.push(-1);
+    const h0 = N / 2;
+    for (let i = 0; i < N; i++) {
+      F.push({ v: [i, (i + 1) % N, A], color: LAT });
+      parent.push(i === h0 ? 0 : i < h0 ? 1 + i + 1 : 1 + i - 1);
+      draw.add(ek(i, (i + 1) % N));
+    }
+    draw.add(ek(0, A));
+    return { V, F, draw, parent, type: 'red', centered: true };
+  }
+
+  function sphere(R, G, M) {
+    const V = [], F = [], draw = new Set(), parent = [];
+    const idx = (g, j) => { if (j === 0) return S; if (j === M) return Nn; return 2 + ((g % G) * (M - 1)) + (j - 1); };
+    const S = 0, Nn = 1;
+    V.push([0, -R, 0], [0, R, 0]);
+    for (let g = 0; g < G; g++) for (let j = 1; j < M; j++) {
+      const th = -Math.PI / 2 + Math.PI * j / M, ph = 2 * Math.PI * g / G;
+      V.push([R * Math.cos(th) * Math.cos(ph), R * Math.sin(th), R * Math.cos(th) * Math.sin(ph)]);
+    }
+    const fid = (g, j) => g * M + j;
+    const E = M / 2;
+    for (let g = 0; g < G; g++) for (let j = 0; j < M; j++) {
+      let v = [idx(g, j), idx(g + 1, j), idx(g + 1, j + 1), idx(g, j + 1)];
+      v = v.filter((x, k) => v.indexOf(x) === k);
+      F.push({ v, color: g % 2 ? '#4ea8de' : '#90e0ef' });
+      let p;
+      if (j === E) {
+        if (g === 0) p = -1;
+        else if (g <= G / 2) p = fid(g - 1, E);
+        else p = fid((g + 1) % G, E);
+      } else p = j > E ? fid(g, j - 1) : fid(g, j + 1);
+      parent.push(p);
+      draw.add(ek(idx(g, j), idx(g, j + 1)));
+    }
+    return { V, F, draw, parent, type: 'red', centered: true, root: 0 };
+  }
+
+  // ---------- álgebra de transformações afins (3x3 + t) ----------
+  const I = () => ({ R: [1, 0, 0, 0, 1, 0, 0, 0, 1], t: [0, 0, 0] });
+  const ap = (M, p) => [
+    M.R[0] * p[0] + M.R[1] * p[1] + M.R[2] * p[2] + M.t[0],
+    M.R[3] * p[0] + M.R[4] * p[1] + M.R[5] * p[2] + M.t[1],
+    M.R[6] * p[0] + M.R[7] * p[1] + M.R[8] * p[2] + M.t[2]];
+  const apR = (M, p) => [M.R[0] * p[0] + M.R[1] * p[1] + M.R[2] * p[2], M.R[3] * p[0] + M.R[4] * p[1] + M.R[5] * p[2], M.R[6] * p[0] + M.R[7] * p[1] + M.R[8] * p[2]];
+  function compose(A, B) { // A∘B
+    const R = new Array(9);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) R[3 * i + j] = A.R[3 * i] * B.R[j] + A.R[3 * i + 1] * B.R[3 + j] + A.R[3 * i + 2] * B.R[6 + j];
+    return { R, t: ap(A, B.t) };
+  }
+  function rotMat(u, a) {
+    const c = Math.cos(a), s = Math.sin(a), C = 1 - c, [x, y, z] = u;
+    return [c + x * x * C, x * y * C - z * s, x * z * C + y * s, y * x * C + z * s, c + y * y * C, y * z * C - x * s, z * x * C - y * s, z * y * C + x * s, c + z * z * C];
+  }
+  function rotAbout(p, u, a) { const R = rotMat(u, a); const M = { R, t: [0, 0, 0] }; const rp = apR(M, p); M.t = sub(p, rp); return M; }
+  const newell = pts => { let n = [0, 0, 0]; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; n[0] += (a[1] - b[1]) * (a[2] + b[2]); n[1] += (a[2] - b[2]) * (a[0] + b[0]); n[2] += (a[0] - b[0]) * (a[1] + b[1]); } return n; };
+
+  // ---------- preparação ----------
+  function prepare(m) {
+    const { V, F } = m;
+    // orienta faces para fora (corpos convexos)
+    const C = mul(V.reduce((s, p) => add(s, p), [0, 0, 0]), 1 / V.length);
+    for (const f of F) {
+      const pts = f.v.map(i => V[i]);
+      const c = mul(pts.reduce((s, p) => add(s, p), [0, 0, 0]), 1 / pts.length);
+      if (dot(newell(pts), sub(c, C)) < 0) f.v.reverse();
+      f.n = nrm(newell(f.v.map(i => V[i])));
+    }
+    // adjacência por arestas
+    const edgeMap = new Map();
+    F.forEach((f, fi) => f.v.forEach((a, k) => { const b = f.v[(k + 1) % f.v.length], key = ek(a, b); if (!edgeMap.has(key)) edgeMap.set(key, []); edgeMap.get(key).push(fi); }));
+    m.adj = F.map(() => []);
+    for (const [key, fs] of edgeMap) if (fs.length === 2) { m.adj[fs[0]].push(fs[1]); m.adj[fs[1]].push(fs[0]); }
+    if (!m.parent) chooseTree(m); else setupTree(m, m.parent);
+    return m;
+  }
+
+  function setupTree(m, parent) {
+    const { V, F } = m;
+    m.parent = parent;
+    const root = parent.indexOf(-1);
+    m.root = root;
+    const kids = F.map(() => []);
+    parent.forEach((p, i) => { if (p >= 0) kids[p].push(i); });
+    m.order = []; const q = [root];
+    while (q.length) { const f = q.shift(); m.order.push(f); for (const k of kids[f]) q.push(k); }
+    m.hinge = F.map((f, fi) => {
+      const p = parent[fi]; if (p < 0) return null;
+      const pv = new Set(F[p].v); let a = -1, b = -1;
+      for (let k = 0; k < f.v.length; k++) { const x = f.v[k], y = f.v[(k + 1) % f.v.length]; if (pv.has(x) && pv.has(y)) { a = x; b = y; break; } }
+      if (a < 0) throw new Error('sem dobradiça ' + fi);
+      const u = nrm(sub(V[b], V[a]));
+      const th = Math.acos(Math.max(-1, Math.min(1, dot(F[p].n, f.n))));
+      const test = apR({ R: rotMat(u, th), t: [0, 0, 0] }, f.n);
+      const sgn = dot(test, F[p].n) > dot(apR({ R: rotMat(u, -th), t: [0, 0, 0] }, f.n), F[p].n) ? 1 : -1;
+      return { p: V[a], u, ang: sgn * th };
+    });
+    // alinhamento à "mesa": normal da raiz -> (0,-1,0), raiz no plano y=0
+    const n = F[root].n, target = [0, -1, 0];
+    let ax = cross(n, target), s = len(ax), c = dot(n, target);
+    let Q;
+    if (s < 1e-9) Q = { R: c > 0 ? [1, 0, 0, 0, 1, 0, 0, 0, 1] : [1, 0, 0, 0, -1, 0, 0, 0, -1], t: [0, 0, 0] };
+    else Q = { R: rotMat(mul(ax, 1 / s), Math.atan2(s, c)), t: [0, 0, 0] };
+    const y0 = ap(Q, V[F[root].v[0]])[1];
+    const rc = mul(F[root].v.reduce((acc, i) => add(acc, ap(Q, V[i])), [0, 0, 0]), 1 / F[root].v.length);
+    Q.t = [-rc[0], -y0, -rc[2]];
+    m.Q = Q;
+  }
+
+  function pose(m, t) {
+    const Ms = new Array(m.F.length);
+    Ms[m.root] = m.Q;
+    for (const f of m.order) {
+      if (f === m.root) continue;
+      const h = m.hinge[f];
+      Ms[f] = compose(Ms[m.parent[f]], rotAbout(h.p, h.u, h.ang * t));
+    }
+    return m.F.map((f, fi) => f.v.map(i => ap(Ms[fi], m.V[i])));
+  }
+
+  // ---------- escolha da árvore sem sobreposição ----------
+  function overlaps(m) {
+    const P = pose(m, 1).map(pts => {
+      const q = pts.map(p => [p[0], p[2]]);
+      const c = q.reduce((s, p) => [s[0] + p[0] / q.length, s[1] + p[1] / q.length], [0, 0]);
+      return q.map(p => [c[0] + (p[0] - c[0]) * 0.995, c[1] + (p[1] - c[1]) * 0.995]);
+    });
+    const box = P.map(q => { let a = [Infinity, Infinity, -Infinity, -Infinity]; for (const p of q) { a[0] = Math.min(a[0], p[0]); a[1] = Math.min(a[1], p[1]); a[2] = Math.max(a[2], p[0]); a[3] = Math.max(a[3], p[1]); } return a; });
+    const sep = (A, B) => {
+      for (const Pp of [A, B]) for (let i = 0; i < Pp.length; i++) {
+        const a = Pp[i], b = Pp[(i + 1) % Pp.length], nx = b[1] - a[1], ny = a[0] - b[0];
+        let amin = Infinity, amax = -Infinity, bmin = Infinity, bmax = -Infinity;
+        for (const p of A) { const d = p[0] * nx + p[1] * ny; amin = Math.min(amin, d); amax = Math.max(amax, d); }
+        for (const p of B) { const d = p[0] * nx + p[1] * ny; bmin = Math.min(bmin, d); bmax = Math.max(bmax, d); }
+        if (amax <= bmin + 1e-9 || bmax <= amin + 1e-9) return true;
+      }
+      return false;
+    };
+    for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) {
+      const a = box[i], b = box[j];
+      if (a[2] < b[0] || b[2] < a[0] || a[3] < b[1] || b[3] < a[1]) continue;
+      if (!sep(P[i], P[j])) return true;
+    }
+    return false;
+  }
+
+  function bfsTree(m, root, rng) {
+    const par = m.F.map(() => -2); par[root] = -1; const q = [root];
+    while (q.length) {
+      const f = q.shift();
+      let nb = m.adj[f].slice();
+      if (rng) nb.sort(() => rng() - 0.5);
+      for (const g of nb) if (par[g] === -2) { par[g] = f; q.push(g); }
+    }
+    return par;
+  }
+  function chooseTree(m) {
+    const order = m.F.map((f, i) => i).sort((a, b) => m.F[b].v.length - m.F[a].v.length);
+    let seed = 1; const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let attempt = 0; attempt < 400; attempt++) {
+      const root = attempt < order.length ? order[attempt] : order[attempt % Math.min(order.length, 12)];
+      const par = bfsTree(m, root, attempt < order.length ? null : rng);
+      setupTree(m, par);
+      if (!overlaps(m)) { m.netAttempts = attempt + 1; return; }
+    }
+    m.netOverlap = true;
+  }
+
+  function build(def) { const m = def.mk(); prepare(m); return m; }
+
+  return { SOLIDS, build, pose, overlaps, newell, nrm, sub, dot, cross, len };
+})();
+if (typeof module !== 'undefined') module.exports = GEOM;
+
+</script>
+<script>
+(() => {
+  const { SOLIDS, build, pose, dot, len } = GEOM;
+  const autoCam = document.getElementById('autoCam');
+  const showEdges = document.getElementById('showEdges');
+  const NOMES = { 3: 'triângulos', 4: 'quadrados', 5: 'pentágonos', 6: 'hexágonos', 8: 'octógonos', 10: 'decágonos' };
+  const INFO_RED = {
+    'cilindro': 'Planificação: <b>2 círculos</b> de raio r e <b>1 retângulo</b> de lados 2πr e h.',
+    'cone': 'Planificação: <b>1 círculo</b> (base) e <b>1 setor circular</b> de raio g (geratriz) e arco 2πr.',
+    'tronco-cone': 'Planificação: <b>2 círculos</b> de raios diferentes e <b>1 coroa circular parcial</b>.',
+    'esfera': '<div class="note">A esfera não é planificável. Aqui ela é aproximada por 12 fusos que se abrem a partir do equador.</div>',
+  };
+  const smooth = x => x * x * (3 - 2 * x);
+  const cards = [];
+
+  function shade(hex, k, toWhite = 0) {
+    const n = parseInt(hex.slice(1), 16);
+    let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    r = r + (255 - r) * toWhite; g = g + (255 - g) * toWhite; b = b + (255 - b) * toWhite;
+    return `rgb(${Math.min(255, r * k) | 0},${Math.min(255, g * k) | 0},${Math.min(255, b * k) | 0})`;
+  }
+
+  const modelCache = new Map();
+  function getModel(def) {
+    if (modelCache.has(def.id)) return modelCache.get(def.id);
+    const m = build(def);
+    const P0 = pose(m, 0).flat(), P1 = pose(m, 1).flat();
+    const cen = P => { let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (const p of P) for (let i = 0; i < 3; i++) { mn[i] = Math.min(mn[i], p[i]); mx[i] = Math.max(mx[i], p[i]); } return mn.map((v, i) => (v + mx[i]) / 2); };
+    const rad = (P, c) => Math.max(...P.map(p => Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2])));
+    m.c0 = cen(P0); m.r0 = rad(P0, m.c0); m.c1 = cen(P1); m.r1 = rad(P1, m.c1);
+    modelCache.set(def.id, m);
+    return m;
+  }
+  function infoHTML(def, m) {
+    if (m.type !== 'poly') return INFO_RED[def.id] || '';
+    const cnt = {}; m.F.forEach(f => cnt[f.v.length] = (cnt[f.v.length] || 0) + 1);
+    const E = m.F.reduce((s, f) => s + f.v.length, 0) / 2;
+    const tipos = Object.keys(cnt).sort((a, b) => a - b).map(k => `${cnt[k]} ${NOMES[k]}`).join(' + ');
+    return `<b>F</b> = ${m.F.length} · <b>A</b> = ${E} · <b>V</b> = ${m.V.length} · V − A + F = ${m.V.length - E + m.F.length}<br>${tipos}`;
+  }
+
+  class Card {
+    constructor(def, container, big = false) {
+      this.def = def; this.big = big; this.t = 0; this.yaw = 0.6; this.pitch = 0.42; this.dirty = true; this.model = null;
+      const el = document.createElement('div'); el.className = 'card';
+      el.innerHTML = `<div class="row"><h3><a href="#${def.id}">${def.nome}</a></h3><button class="png" title="Baixar planificação (A4, com abas) para imprimir">PNG com abas</button></div><canvas></canvas>
+        <div class="slider"><button class="play" title="Animar">▶</button><input type="range" min="0" max="1000" value="0" aria-label="Planificar ${def.nome}"><span class="pct">0%</span></div>
+        <div class="ends"><span>sólido</span><span>planificação</span></div>
+        <div class="info"></div>`;
+      container.appendChild(el);
+      this.el = el; this.cv = el.querySelector('canvas'); this.ctx = this.cv.getContext('2d');
+      this.range = el.querySelector('input'); this.pct = el.querySelector('.pct'); this.info = el.querySelector('.info');
+      this.play = el.querySelector('.play');
+      this.range.addEventListener('input', () => { this.stopAnim(); this.setT(this.range.value / 1000); });
+      this.play.addEventListener('click', () => this.animateTo(this.t < 0.5 ? 1 : 0));
+      el.querySelector('.png').addEventListener('click', () => downloadNet(def, getModel(def)));
+      el.querySelector('h3 a').addEventListener('click', e => { e.preventDefault(); if (!this.big) openFocus(def.id, this); });
+      this.bindDrag();
+    }
+    ensure() {
+      if (this.model) return;
+      this.model = getModel(this.def);
+      this.info.innerHTML = infoHTML(this.def, this.model);
+    }
+    setT(t) { this.t = t; this.range.value = Math.round(t * 1000); this.pct.textContent = Math.round(t * 100) + '%'; this.play.textContent = t < 0.5 ? '▶' : '◀'; this.dirty = true; }
+    stopAnim() { this.anim = null; }
+    animateTo(target) {
+      const from = this.t, dur = (this.big ? 3200 : 2200) * Math.abs(target - from) + 200, t0 = performance.now();
+      this.anim = now => { const k = Math.min(1, (now - t0) / dur); this.setT(from + (target - from) * smooth(k)); if (k >= 1) this.anim = null; };
+    }
+    bindDrag() {
+      let drag = null;
+      this.cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, yaw: this.yaw, pitch: this.pitch }; this.cv.setPointerCapture(e.pointerId); });
+      this.cv.addEventListener('pointermove', e => {
+        if (!drag) return;
+        const sens = this.big ? 0.008 : 0.012;
+        this.yaw = drag.yaw + (e.clientX - drag.x) * sens;
+        this.pitch = Math.max(-1.45, Math.min(1.55, drag.pitch + (e.clientY - drag.y) * sens));
+        this.dirty = true;
+      });
+      const end = () => drag = null;
+      this.cv.addEventListener('pointerup', end); this.cv.addEventListener('pointercancel', end);
+      this.cv.addEventListener('dblclick', () => { this.yaw = 0.6; this.pitch = 0.42; this.dirty = true; });
+    }
+    draw() {
+      this.ensure();
+      const m = this.model, cv = this.cv, ctx = this.ctx, dpr = Math.min(2, window.devicePixelRatio || 1);
+      const W = Math.round(cv.clientWidth * dpr), H = Math.round(cv.clientHeight * dpr);
+      if (!W || !H) return;
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      ctx.clearRect(0, 0, W, H);
+      const t = this.t, s = smooth(t);
+      const faces = pose(m, t);
+      const c = m.c0.map((v, i) => v + (m.c1[i] - v) * s), R = m.r0 + (m.r1 - m.r0) * s;
+      const pitch = autoCam.checked ? this.pitch + (1.55 - this.pitch) * s : this.pitch;
+      const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      const D = R * 5.5, K = Math.min(W, H) * 0.42 / R * (D - R) / D;
+      const L = [-0.35, 0.55, 0.76];
+      const out = [];
+      for (let fi = 0; fi < faces.length; fi++) {
+        const pts = faces[fi].map(p => {
+          const x = p[0] - c[0], y = p[1] - c[1], z = p[2] - c[2];
+          const x1 = cy * x + sy * z, z1 = -sy * x + cy * z;
+          return [x1, y * cp - z1 * sp, y * sp + z1 * cp];
+        });
+        let n = [0, 0, 0];
+        for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; n[0] += (a[1] - b[1]) * (a[2] + b[2]); n[1] += (a[2] - b[2]) * (a[0] + b[0]); n[2] += (a[0] - b[0]) * (a[1] + b[1]); }
+        const nl = Math.hypot(...n) || 1; n = n.map(v => v / nl);
+        const depth = pts.reduce((sum, p) => sum + p[2], 0) / pts.length;
+        const scr = pts.map(p => { const f = D / (D - p[2]); return [W / 2 + p[0] * K * f, H / 2 - p[1] * K * f]; });
+        out.push({ fi, scr, depth, front: n[2] > 0, lam: Math.abs(dot(n, L)) });
+      }
+      out.sort((a, b) => a.depth - b.depth);
+      const edges = showEdges.checked;
+      ctx.lineJoin = 'round';
+      for (const o of out) {
+        const f = m.F[o.fi];
+        const col = o.front ? shade(f.color, 0.62 + 0.45 * o.lam) : shade(f.color, 0.55 + 0.35 * o.lam, 0.35);
+        ctx.beginPath();
+        o.scr.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+        ctx.closePath();
+        ctx.fillStyle = col; ctx.fill();
+        ctx.strokeStyle = col; ctx.lineWidth = 1 * dpr; ctx.stroke();
+        if (edges) {
+          ctx.beginPath();
+          const v = f.v;
+          for (let k = 0; k < v.length; k++) {
+            const a = v[k], b = v[(k + 1) % v.length];
+            if (m.draw && !m.draw.has(a < b ? a + '-' + b : b + '-' + a)) continue;
+            const p = o.scr[k], q = o.scr[(k + 1) % v.length];
+            ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]);
+          }
+          ctx.strokeStyle = 'rgba(25,30,40,.85)'; ctx.lineWidth = (this.big ? 1.6 : 1.3) * dpr; ctx.stroke();
+        }
+      }
+      this.dirty = false;
+    }
+  }
+
+  // ================= Planificação para imprimir (A4, com abas) =================
+  function convexSep(A, B) { // true se os polígonos convexos NÃO se sobrepõem
+    for (const P of [A, B]) for (let i = 0; i < P.length; i++) {
+      const a = P[i], b = P[(i + 1) % P.length], nx = b[1] - a[1], ny = a[0] - b[0];
+      let amin = Infinity, amax = -Infinity, bmin = Infinity, bmax = -Infinity;
+      for (const p of A) { const d = p[0] * nx + p[1] * ny; if (d < amin) amin = d; if (d > amax) amax = d; }
+      for (const p of B) { const d = p[0] * nx + p[1] * ny; if (d < bmin) bmin = d; if (d > bmax) bmax = d; }
+      if (amax <= bmin + 1e-9 || bmax <= amin + 1e-9) return true;
+    }
+    return false;
+  }
+  const centroid = P => P.reduce((s, p) => [s[0] + p[0] / P.length, s[1] + p[1] / P.length], [0, 0]);
+  const shrink = (P, k) => { const c = centroid(P); return P.map(p => [c[0] + (p[0] - c[0]) * k, c[1] + (p[1] - c[1]) * k]); };
+  const bbox = P => { const b = [Infinity, Infinity, -Infinity, -Infinity]; for (const p of P) { b[0] = Math.min(b[0], p[0]); b[1] = Math.min(b[1], p[1]); b[2] = Math.max(b[2], p[0]); b[3] = Math.max(b[3], p[1]); } return b; };
+  const boxHit = (a, b) => !(a[2] < b[0] || b[2] < a[0] || a[3] < b[1] || b[3] < a[1]);
+
+  function netLayout(m) {
+    const ek = (a, b) => a < b ? a + '-' + b : b + '-' + a;
+    let faces = pose(m, 1).map(f => f.map(p => [p[0], p[2]]));
+    // gira a planificação para o ângulo que melhor aproveita a folha A4
+    {
+      const pts = faces.flat(); let best = { sc: -1, th: 0 };
+      for (let d = 0; d < 180; d += 1) {
+        const th = d * Math.PI / 180, c = Math.cos(th), s = Math.sin(th);
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const p of pts) { const x = c * p[0] - s * p[1], y = s * p[0] + c * p[1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        const w = x1 - x0, h = y1 - y0;
+        const sc = Math.max(Math.min(3228 / w, 2060 / h), Math.min(2200 / w, 3088 / h));
+        if (sc > best.sc * 1.002) best = { sc, th };
+      }
+      const c = Math.cos(best.th), s = Math.sin(best.th);
+      faces = faces.map(f => f.map(p => [c * p[0] - s * p[1], s * p[0] + c * p[1]]));
+    }
+    // arestas de dobra = dobradiças da árvore
+    const fold = new Set();
+    m.F.forEach((f, fi) => { const p = m.parent[fi]; if (p < 0) return; const pv = new Set(m.F[p].v); for (let k = 0; k < f.v.length; k++) { const a = f.v[k], b = f.v[(k + 1) % f.v.length]; if (pv.has(a) && pv.has(b)) { fold.add(ek(a, b)); break; } } });
+    // arestas de corte: aparecem duas vezes no contorno
+    const occ = new Map();
+    m.F.forEach((f, fi) => f.v.forEach((a, k) => { const b = f.v[(k + 1) % f.v.length], key = ek(a, b); if (fold.has(key)) return; if (!occ.has(key)) occ.set(key, []); occ.get(key).push({ fi, k }); }));
+    const pairs = [...occ.values()].filter(o => o.length === 2);
+    // tamanho típico da aresta para a altura das abas
+    let el = 0, ne = 0; faces.forEach(f => f.forEach((p, i) => { const q = f[(i + 1) % f.length]; el += Math.hypot(q[0] - p[0], q[1] - p[1]); ne++; }));
+    const hBase = m.type === 'poly' ? 0.26 * el / ne : 0.06 * Math.max(m.r1, 1);
+    const blockers = faces.map(f => { const P = shrink(f, 0.995); return { P, b: bbox(P) }; });
+    const tabs = [];
+    // aba trapezoidal com ângulos independentes em cada ponta (cabe em vãos estreitos)
+    const makeTab = (fi, k, hk, ap, aq) => {
+      const f = faces[fi], p = f[k], q = f[(k + 1) % f.length], c = centroid(f);
+      const L = Math.hypot(q[0] - p[0], q[1] - p[1]), u = [(q[0] - p[0]) / L, (q[1] - p[1]) / L];
+      let n = [-u[1], u[0]]; if ((c[0] - p[0]) * n[0] + (c[1] - p[1]) * n[1] > 0) n = [-n[0], -n[1]];
+      const cp = 1 / Math.tan(ap), cq = 1 / Math.tan(aq);
+      const h = Math.min(hBase * hk, L * 0.9 / (cp + cq));
+      const dp = h * cp, dq = h * cq;
+      const T = [p, q, [q[0] - u[0] * dq + n[0] * h, q[1] - u[1] * dq + n[1] * h], [p[0] + u[0] * dp + n[0] * h, p[1] + u[1] * dp + n[1] * h]];
+      T.area = h * (2 * L - dp - dq) / 2;
+      return T;
+    };
+    const fits = T => {
+      const S = shrink(T, 0.985), b = bbox(S);
+      for (const o of blockers) if (boxHit(b, o.b) && !convexSep(S, o.P)) return false;
+      return true;
+    };
+    const ANG = [50, 35, 22, 12, 6].map(d => d * Math.PI / 180);
+    // arestas mais "apertadas" primeiro: tentamos tudo e guardamos a maior aba que cabe
+    pairs.forEach((pr, idx) => {
+      let best = null;
+      for (const side of [0, 1]) {
+        const o = pr[side];
+        for (const hk of [1, 0.7, 0.45]) {
+          for (const ap of ANG) for (const aq of ANG) {
+            const T = makeTab(o.fi, o.k, hk, ap, aq);
+            if ((!best || T.area > best.T.area * 1.0001) && fits(T)) best = { T, on: o, other: pr[1 - side] };
+          }
+          if (best && hk === 1 && side === 0 && best.T.area > 0.8 * hBase * 0.8) break;
+        }
+      }
+      if (!best) { tabs.push({ T: null, on: pr[0], other: pr[1], num: idx + 1 }); return; }
+      best.num = idx + 1;
+      tabs.push(best);
+      const S = shrink(best.T, 0.995); blockers.push({ P: S, b: bbox(S) });
+    });
+    return { faces, fold, tabs, ek };
+  }
+
+  function netCanvas(def, m) {
+    const { faces, fold, tabs, ek } = netLayout(m);
+    const all = faces.flat().concat(tabs.flatMap(t => t.T || []));
+    const noTab = tabs.filter(t => !t.T); const real = tabs.filter(t => t.T);
+    let [x0, y0, x1, y1] = bbox(all);
+    const w = x1 - x0, h = y1 - y0, land = w > h * 1.15;
+    const PW = land ? 3508 : 2480, PH = land ? 2480 : 3508; // A4 a 300 dpi
+    const mg = 140, top = 250, bottom = 170;
+    const k = Math.min((PW - 2 * mg) / w, (PH - top - bottom) / h);
+    const ox = (PW - w * k) / 2, oy = top + (PH - top - bottom - h * k) / 2;
+    const P = p => [ox + (p[0] - x0) * k, oy + (p[1] - y0) * k];
+    const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PW, PH);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    const path = pts => { ctx.beginPath(); pts.forEach((p, i) => { const q = P(p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.closePath(); };
+    // abas
+    for (const t of real) { path(t.T); ctx.fillStyle = '#ececec'; ctx.fill(); }
+    // faces
+    faces.forEach((f, fi) => { path(f); const col = shade(m.F[fi].color, 1, 0.6); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke(); });
+    // linhas de corte (contínuas): contorno das abas e arestas de corte sem aba
+    const tabEdge = new Set(real.map(t => t.on.fi + ':' + t.on.k));
+    ctx.setLineDash([]); ctx.strokeStyle = '#111'; ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (const t of real) { const Q = t.T.map(P); ctx.moveTo(Q[1][0], Q[1][1]); for (let i = 2; i < Q.length; i++) ctx.lineTo(Q[i][0], Q[i][1]); ctx.lineTo(Q[0][0], Q[0][1]); }
+    faces.forEach((f, fi) => { const v = m.F[fi].v; for (let i = 0; i < v.length; i++) { const key = ek(v[i], v[(i + 1) % v.length]); if (fold.has(key) || tabEdge.has(fi + ':' + i)) continue; const p = P(f[i]), q = P(f[(i + 1) % f.length]); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); } });
+    ctx.stroke();
+    // linhas de dobra (tracejadas): dobradiças visíveis + base das abas
+    ctx.setLineDash([22, 14]); ctx.strokeStyle = '#333'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    faces.forEach((f, fi) => { const v = m.F[fi].v; for (let i = 0; i < v.length; i++) { const key = ek(v[i], v[(i + 1) % v.length]); if (!fold.has(key) || (m.draw && !m.draw.has(key))) continue; const p = P(f[i]), q = P(f[(i + 1) % f.length]); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); } });
+    for (const t of real) { const Q = t.T.map(P); ctx.moveTo(Q[0][0], Q[0][1]); ctx.lineTo(Q[1][0], Q[1][1]); }
+    ctx.stroke(); ctx.setLineDash([]);
+    // numeração dos pares (só poliedros)
+    if (m.type === 'poly') {
+      ctx.fillStyle = '#222'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const edgeLabel = (o, num, fs) => {
+        const f = faces[o.fi].map(P), a = f[o.k], b = f[(o.k + 1) % f.length], fc = centroid(f);
+        const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], dv = [fc[0] - mid[0], fc[1] - mid[1]], dl = Math.hypot(...dv);
+        const off = Math.min(fs * 0.9, dl * 0.45);
+        ctx.fillText(num, mid[0] + dv[0] / dl * off, mid[1] + dv[1] / dl * off);
+      };
+      for (const t of tabs) {
+        const f = faces[t.on.fi].map(P), a = f[t.on.k], b = f[(t.on.k + 1) % f.length];
+        const L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        const fs = Math.max(18, Math.min(46, L * 0.2));
+        ctx.font = `600 ${fs}px "Segoe UI", Arial, sans-serif`;
+        if (t.T) {
+          const T = t.T.map(P), base = [(T[0][0] + T[1][0]) / 2, (T[0][1] + T[1][1]) / 2], top = [(T[2][0] + T[3][0]) / 2, (T[2][1] + T[3][1]) / 2];
+          const hh = Math.hypot(top[0] - base[0], top[1] - base[1]);
+          if (hh > fs * 0.8) ctx.fillText(t.num, (base[0] + top[0]) / 2, (base[1] + top[1]) / 2);
+          else edgeLabel(t.on, t.num, fs);
+        } else { ctx.fillStyle = '#b00020'; edgeLabel(t.on, t.num + '*', fs); ctx.fillStyle = '#222'; }
+        if (!t.T) ctx.fillStyle = '#b00020';
+        edgeLabel(t.other, t.T ? t.num : t.num + '*', fs);
+        ctx.fillStyle = '#222';
+      }
+    }
+    // cabeçalho e instruções
+    ctx.fillStyle = '#111'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = '700 64px "Segoe UI", Arial, sans-serif'; ctx.fillText(def.nome, mg, 120);
+    ctx.font = '400 36px "Segoe UI", Arial, sans-serif'; ctx.fillStyle = '#444';
+    if (tabs.some(t => !t.T)) { ctx.font = '400 30px "Segoe UI", Arial, sans-serif'; ctx.fillStyle = '#b00020'; ctx.fillText('Arestas com * não têm espaço para aba: una-as com fita adesiva.', mg, 222); ctx.fillStyle = '#444'; ctx.font = '400 36px "Segoe UI", Arial, sans-serif'; }
+    ctx.fillText(m.type === 'poly'
+      ? 'Recorte na linha contínua · dobre na tracejada · cole cada aba sob a aresta de mesmo número.'
+      : 'Recorte na linha contínua · dobre na tracejada · cole as abas por baixo da parte vizinha.', mg, 180);
+    if (def.id === 'esfera') { ctx.font = 'italic 32px "Segoe UI", Arial, sans-serif'; ctx.fillText('A esfera não é planificável: este modelo de fusos é uma aproximação.', mg, PH - 80); }
+    else { ctx.font = '400 28px "Segoe UI", Arial, sans-serif'; ctx.fillStyle = '#888'; ctx.fillText('Imprima em tamanho real (A4) · papel de gramatura 120 g/m² ou mais facilita a montagem.', mg, PH - 80); }
+    return cv;
+  }
+  function downloadNet(def, m) {
+    const cv = netCanvas(def, m);
+    const a = document.createElement('a'); a.download = `planificacao-${def.id}.png`; a.href = cv.toDataURL('image/png'); a.click();
+  }
+  window.__netCanvas = id => { const def = SOLIDS.find(d => d.id === id); return netCanvas(def, getModel(def)).toDataURL('image/png'); };
+
+  // ================= cartões =================
+  for (const def of SOLIDS) cards.push(new Card(def, document.querySelector(`.grid[data-grupo="${def.grupo}"]`)));
+
+  const visible = new Set();
+  const io = new IntersectionObserver(es => es.forEach(e => { const c = cards.find(c => c.cv === e.target); if (e.isIntersecting) { visible.add(c); c.dirty = true; } else visible.delete(c); }), { rootMargin: '200px' });
+  cards.forEach(c => io.observe(c.cv));
+  window.addEventListener('resize', () => { cards.forEach(c => c.dirty = true); if (focusCard) focusCard.dirty = true; });
+  [autoCam, showEdges].forEach(x => x.addEventListener('change', () => { cards.forEach(c => c.dirty = true); if (focusCard) focusCard.dirty = true; }));
+  document.getElementById('openAll').addEventListener('click', () => cards.forEach(c => c.animateTo(1)));
+  document.getElementById('closeAll').addEventListener('click', () => cards.forEach(c => c.animateTo(0)));
+
+  // ================= modo estudo (tela grande) =================
+  const focusEl = document.getElementById('focus'), fBody = document.getElementById('fBody');
+  let focusCard = null;
+  function openFocus(id, from) {
+    const def = SOLIDS.find(d => d.id === id); if (!def) return;
+    fBody.innerHTML = '';
+    focusCard = new Card(def, fBody, true);
+    if (from) { focusCard.t = from.t; focusCard.yaw = from.yaw; focusCard.pitch = from.pitch; focusCard.setT(from.t); }
+    focusEl.classList.add('open'); document.body.classList.add('lock');
+    if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+    focusCard.dirty = true;
+  }
+  function closeFocus() {
+    if (!focusCard) return;
+    const small = cards.find(c => c.def.id === focusCard.def.id);
+    if (small) { small.setT(focusCard.t); small.yaw = focusCard.yaw; small.pitch = focusCard.pitch; small.dirty = true; }
+    focusCard = null; fBody.innerHTML = '';
+    focusEl.classList.remove('open'); document.body.classList.remove('lock');
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+  function stepFocus(d) {
+    if (!focusCard) return;
+    const i = SOLIDS.findIndex(s => s.id === focusCard.def.id), n = SOLIDS[(i + d + SOLIDS.length) % SOLIDS.length];
+    openFocus(n.id, null);
+  }
+  document.getElementById('fClose').addEventListener('click', closeFocus);
+  document.getElementById('fPrev').addEventListener('click', () => stepFocus(-1));
+  document.getElementById('fNext').addEventListener('click', () => stepFocus(1));
+  document.addEventListener('keydown', e => {
+    if (!focusCard) return;
+    if (e.key === 'Escape') closeFocus();
+    else if (e.key === 'ArrowLeft' && e.target.tagName !== 'INPUT') stepFocus(-1);
+    else if (e.key === 'ArrowRight' && e.target.tagName !== 'INPUT') stepFocus(1);
+    else if (e.key === ' ' && e.target.tagName !== 'BUTTON') { e.preventDefault(); focusCard.animateTo(focusCard.t < 0.5 ? 1 : 0); }
+  });
+  // link direto: index.html#cubo-truncado abre o sólido em tela grande
+  const fromHash = () => { const id = decodeURIComponent(location.hash.slice(1)); if (SOLIDS.some(s => s.id === id)) openFocus(id, cards.find(c => c.def.id === id)); };
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  function loop(now) {
+    for (const c of cards) if (c.anim) c.anim(now);
+    for (const c of visible) if (c.dirty) c.draw();
+    if (focusCard) { if (focusCard.anim) focusCard.anim(now); if (focusCard.dirty) focusCard.draw(); }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
